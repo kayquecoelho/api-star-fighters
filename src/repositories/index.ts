@@ -29,3 +29,10 @@ export async function insertFighter(username: string) {
     INSERT INTO fighters (username, wins, draws, losses) VALUES ($1, 0, 0, 0)
   `, [username]);
 }
+
+export async function getRanking(){
+  const { rows: result} = await connection.query(`
+    SELECT * FROM fighters ORDER BY wins DESC, draws DESC
+  `);
+  return result;
+}

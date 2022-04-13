@@ -8,3 +8,9 @@ export async function playBattle(req: Request, res: Response) {
 
   res.send(gameResult);
 }
+
+export async function getRanking(req:Request, res: Response) {
+  const ranking = await battleService.getRanking();
+
+  res.send(ranking);
+}

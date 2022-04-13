@@ -11,12 +11,8 @@ export async function playBattle(firstUser: string, secondUser: string) {
 
   await checkExistenceOfUsers(firstUser, secondUser);
 
-  const firstUserScore = firstUserRepo.data.reduce((totalScore: number, repository) => (
-    totalScore + repository.stargazers_count
-  ), 0);
-  const secondUserScore = secondUserRepo.data.reduce((totalScore: number, repository) => (
-    totalScore + repository.stargazers_count
-  ), 0);
+  const firstUserScore = calculateScore(firstUserRepo.data);
+  const secondUserScore = calculateScore(secondUserRepo.data);
   
   let [winner, loser, draw]: [string|null, string|null, boolean] = [null, null, false];
 
@@ -36,7 +32,7 @@ export async function playBattle(firstUser: string, secondUser: string) {
   if (loser) {
     await battleRepository.claimGameLoser(loser);
   }
-  if (draw){
+  if (draw) {
     await battleRepository.claimGameDraw(firstUser, secondUser);
   }
 
@@ -48,15 +44,28 @@ export async function playBattle(firstUser: string, secondUser: string) {
   return gameResult;
 }
 
-export async function checkExistenceOfUsers(firstUser: string, secondUser: string) {
+async function checkExistenceOfUsers(firstUser: string, secondUser: string) {
   const firstUserExists = await battleRepository.findFighter(firstUser);
 
   if (firstUserExists.rowCount === 0) {
     await battleRepository.insertFighter(firstUser);
   }
+
   const secondUserExists = await battleRepository.findFighter(secondUser);
 
   if (secondUserExists.rowCount === 0) {
     await battleRepository.insertFighter(secondUser);
   }
+}
+
+function calculateScore(repositories: any[]) {
+  const score = repositories.reduce((totalScore: number, repository) => (
+    totalScore + repository.stargazers_count
+  ), 0);
+  return score;
+}
+
+export async function getRanking(){
+  const ranking = await battleRepository.getRanking();
+  return { fighters: ranking };
 }
