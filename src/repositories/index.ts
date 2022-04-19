@@ -1,5 +1,13 @@
 import connection from "../database.js";
 
+interface Fighter {
+  id: number;
+  username: string;
+  wins: number;
+  losses: number;
+  draws: number;
+};
+
 export async function claimGameWinner(username: string){
   await connection.query(`
     UPDATE fighters SET wins=wins+1 WHERE username=$1
@@ -19,7 +27,7 @@ export async function claimGameDraw(firstUser: string, secondUser:string) {
 }
 
 export async function findFighter(username: string) {
-  const result = await connection.query(`
+  const result = await connection.query<Fighter>(`
     SELECT username FROM fighters WHERE username=$1`, [username]);
   return result;
 }
@@ -31,7 +39,7 @@ export async function insertFighter(username: string) {
 }
 
 export async function getRanking(){
-  const { rows: result} = await connection.query(`
+  const { rows: result} = await connection.query<Fighter>(`
     SELECT * FROM fighters ORDER BY wins DESC, draws DESC
   `);
   return result;

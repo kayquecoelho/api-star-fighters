@@ -4,6 +4,7 @@ export function unprocessableEntity(entity: string) {
     message: `${entity} is not valid! Check your data`,
   };
 }
+
 export function notFound(entity: string) {
   return {
     type: "error_not_found",

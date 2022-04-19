@@ -1,6 +1,11 @@
 import joi from "joi";
 
-const battleSchema = joi.object({
+export interface Battle {
+  firstUser: string,
+  secondUser: string
+}
+
+const battleSchema = joi.object<Battle>({
 	"firstUser": joi.string().required(),
   "secondUser": joi.string().required()
 });

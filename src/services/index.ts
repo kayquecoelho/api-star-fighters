@@ -1,20 +1,43 @@
 import * as githubService from "./gitHubService.js";
-import * as errors from "../errors/erros.js";
 import * as battleRepository from "../repositories/index.js";
 
 export async function playBattle(firstUser: string, secondUser: string) {
-  const firstUserRepo = await githubService.getUserRepositories(firstUser);
-  if (firstUserRepo.status === 404) throw errors.notFound(firstUser);
+  const firstUserRepo = await getUserRepo(firstUser);
 
-  const secondUserRepo = await githubService.getUserRepositories(secondUser);
-  if (secondUserRepo.status === 404) throw errors.notFound(secondUser);
+  const secondUserRepo = await getUserRepo(secondUser);
 
   await checkExistenceOfUsers(firstUser, secondUser);
-
+  
   const firstUserScore = calculateScore(firstUserRepo.data);
   const secondUserScore = calculateScore(secondUserRepo.data);
-  
-  let [winner, loser, draw]: [string|null, string|null, boolean] = [null, null, false];
+
+  const gameResult = await claimResult(
+    firstUserScore,
+    secondUserScore,
+    firstUser,
+    secondUser
+  );
+
+  return gameResult;
+}
+
+export async function getRanking() {
+  const ranking = await battleRepository.getRanking();
+
+  return { fighters: ranking };
+}
+
+async function claimResult(
+  firstUserScore: number,
+  secondUserScore: number,
+  firstUser: string,
+  secondUser: string
+) {
+  let [winner, loser, draw]: [string | null, string | null, boolean] = [
+    null,
+    null,
+    false,
+  ];
 
   if (firstUserScore > secondUserScore) {
     winner = firstUser;
@@ -38,34 +61,37 @@ export async function playBattle(firstUser: string, secondUser: string) {
 
   const gameResult = {
     winner,
-    loser, 
-    draw
+    loser,
+    draw,
   };
   return gameResult;
 }
 
+async function getUserRepo(user: string) {
+  const UserRepo = await githubService.getUserRepositories(user);
+
+  return UserRepo;
+}
+
 async function checkExistenceOfUsers(firstUser: string, secondUser: string) {
-  const firstUserExists = await battleRepository.findFighter(firstUser);
+  await findFighter(firstUser);
 
-  if (firstUserExists.rowCount === 0) {
-    await battleRepository.insertFighter(firstUser);
-  }
+  await findFighter(secondUser);
+}
 
-  const secondUserExists = await battleRepository.findFighter(secondUser);
+async function findFighter(fighter: string) {
+  const fighterExists = await battleRepository.findFighter(fighter);
 
-  if (secondUserExists.rowCount === 0) {
-    await battleRepository.insertFighter(secondUser);
+  if (fighterExists.rowCount === 0) {
+    await battleRepository.insertFighter(fighter);
   }
 }
 
 function calculateScore(repositories: any[]) {
-  const score = repositories.reduce((totalScore: number, repository) => (
-    totalScore + repository.stargazers_count
-  ), 0);
+  const score = repositories.reduce(
+    (totalScore: number, repository) =>
+      totalScore + repository.stargazers_count,
+    0
+  );
   return score;
-}
-
-export async function getRanking(){
-  const ranking = await battleRepository.getRanking();
-  return { fighters: ranking };
 }
